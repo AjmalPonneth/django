@@ -11,6 +11,7 @@ Model inheritance exists in two varieties:
 
 Both styles are demonstrated here.
 """
+
 from django.db import models
 
 #
@@ -104,6 +105,12 @@ class Restaurant(Place, Rating):
 
 class ItalianRestaurant(Restaurant):
     serves_gnocchi = models.BooleanField(default=False)
+
+
+class ItalianRestaurantCommonParent(ItalianRestaurant, Place):
+    place_ptr_two = models.OneToOneField(
+        Place, on_delete=models.CASCADE, parent_link=True
+    )
 
 
 class Supplier(Place):

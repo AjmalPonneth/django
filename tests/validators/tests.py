@@ -106,6 +106,7 @@ VALID_URLS = [
     "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
     "ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
     "ddddddddddddddddd:password@example.com:8080",
+    "http://userid:password" + "d" * 2000 + "@example.aaaaaaaaaaaaa.com",
     "http://142.42.1.1/",
     "http://142.42.1.1:8080/",
     "http://➡.ws/䨹",
@@ -236,6 +237,7 @@ INVALID_URLS = [
     "aaaaaa.com",
     "http://example.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     "aaaaaa",
+    "http://example." + ("a" * 63 + ".") * 1000 + "com",
     "http://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaa."
     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaa"
     "aaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.aaaaaaaaaaaaaa"
@@ -291,6 +293,7 @@ TEST_DATA = [
     (validate_email, "example@%s.%s.atm" % ("a" * 63, "b" * 10), None),
     (validate_email, "example@atm.%s" % ("a" * 64), ValidationError),
     (validate_email, "example@%s.atm.%s" % ("b" * 64, "a" * 63), ValidationError),
+    (validate_email, "example@%scom" % (("a" * 63 + ".") * 100), ValidationError),
     (validate_email, None, ValidationError),
     (validate_email, "", ValidationError),
     (validate_email, "abc", ValidationError),
@@ -687,24 +690,24 @@ class TestValidatorEquality(TestCase):
 
     def test_regex_equality(self):
         self.assertEqual(
-            RegexValidator(r"^(?:[a-z0-9\.\-]*)://"),
-            RegexValidator(r"^(?:[a-z0-9\.\-]*)://"),
+            RegexValidator(r"^(?:[a-z0-9.-]*)://"),
+            RegexValidator(r"^(?:[a-z0-9.-]*)://"),
         )
         self.assertNotEqual(
-            RegexValidator(r"^(?:[a-z0-9\.\-]*)://"),
-            RegexValidator(r"^(?:[0-9\.\-]*)://"),
+            RegexValidator(r"^(?:[a-z0-9.-]*)://"),
+            RegexValidator(r"^(?:[0-9.-]*)://"),
         )
         self.assertEqual(
-            RegexValidator(r"^(?:[a-z0-9\.\-]*)://", "oh noes", "invalid"),
-            RegexValidator(r"^(?:[a-z0-9\.\-]*)://", "oh noes", "invalid"),
+            RegexValidator(r"^(?:[a-z0-9.-]*)://", "oh noes", "invalid"),
+            RegexValidator(r"^(?:[a-z0-9.-]*)://", "oh noes", "invalid"),
         )
         self.assertNotEqual(
-            RegexValidator(r"^(?:[a-z0-9\.\-]*)://", "oh", "invalid"),
-            RegexValidator(r"^(?:[a-z0-9\.\-]*)://", "oh noes", "invalid"),
+            RegexValidator(r"^(?:[a-z0-9.-]*)://", "oh", "invalid"),
+            RegexValidator(r"^(?:[a-z0-9.-]*)://", "oh noes", "invalid"),
         )
         self.assertNotEqual(
-            RegexValidator(r"^(?:[a-z0-9\.\-]*)://", "oh noes", "invalid"),
-            RegexValidator(r"^(?:[a-z0-9\.\-]*)://"),
+            RegexValidator(r"^(?:[a-z0-9.-]*)://", "oh noes", "invalid"),
+            RegexValidator(r"^(?:[a-z0-9.-]*)://"),
         )
 
         self.assertNotEqual(
@@ -718,7 +721,7 @@ class TestValidatorEquality(TestCase):
         )
 
     def test_regex_equality_nocache(self):
-        pattern = r"^(?:[a-z0-9\.\-]*)://"
+        pattern = r"^(?:[a-z0-9.-]*)://"
         left = RegexValidator(pattern)
         re.purge()
         right = RegexValidator(pattern)
@@ -746,6 +749,10 @@ class TestValidatorEquality(TestCase):
         self.assertEqual(
             EmailValidator(message="BAD EMAIL", code="bad"),
             EmailValidator(message="BAD EMAIL", code="bad"),
+        )
+        self.assertEqual(
+            EmailValidator(allowlist=["127.0.0.1", "localhost"]),
+            EmailValidator(allowlist=["localhost", "127.0.0.1"]),
         )
 
     def test_basic_equality(self):
@@ -800,6 +807,10 @@ class TestValidatorEquality(TestCase):
         self.assertEqual(
             FileExtensionValidator(["TXT", "png"]),
             FileExtensionValidator(["txt", "png"]),
+        )
+        self.assertEqual(
+            FileExtensionValidator(["jpg", "png", "txt"]),
+            FileExtensionValidator(["txt", "jpg", "png"]),
         )
         self.assertEqual(
             FileExtensionValidator(["txt"]),
