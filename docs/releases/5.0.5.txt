@@ -33,3 +33,5 @@ Bugfixes
 
 * Fixed a bug in Django 5.0 where the ``querysets`` argument of
   ``GenericPrefetch`` was not required (:ticket:`35426`).
+
+* Allowed importing ``reset_queries`` from ``django.db`` (:ticket:`35547`).
